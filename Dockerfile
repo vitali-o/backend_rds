@@ -1,8 +1,5 @@
-# Use the official Python image from the Docker Hub
+# Use an official Python runtime as a base image
 FROM python:3.9-slim
-
-# Set the working directory in the container
-WORKDIR /app
 
 # Install the necessary system dependencies for PostgreSQL and build tools
 RUN apt-get update && apt-get install -y \
@@ -11,17 +8,35 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file into the container
-COPY requirements.txt /app/
 
-# Install the dependencies
+# Set environment variables for PostgreSQL connection
+ENV DB_NAME=ps_db
+ENV DB_USER=ps_user
+ENV DB_PASSWORD=ps_password
+ENV DB_HOST=db
+ENV DB_PORT=5432
+
+# Set environment variables for Django
+ENV PYTHONUNBUFFERED=1
+
+ENV CORS_ALLOW_ALL_ORIGINS=true
+
+
+# Set workdir
+WORKDIR /app
+
+# Copy the Django project files
+COPY . /app
+
+
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the current directory contents into the container
-COPY . /app/
+ENV CORS_ALLOWED_ORIGINS="http://localhost:8000,http://localhost,http://127.0.0.1"
 
 # Expose the port the app runs on
 EXPOSE 8000
 
-# Run the Django app
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+
+# Run migrations and start the server
+CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
