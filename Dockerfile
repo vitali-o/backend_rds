@@ -8,19 +8,9 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-
-# Set environment variables for PostgreSQL connection
-ENV DB_NAME=ps_db
-ENV DB_USER=ps_user
-ENV DB_PASSWORD=ps_password
-ENV DB_HOST=db
-ENV DB_PORT=5432
-
-# Set environment variables for Django
+#Set environment variables for Django
 ENV PYTHONUNBUFFERED=1
-
 ENV CORS_ALLOW_ALL_ORIGINS=true
-
 
 # Set workdir
 WORKDIR /app
@@ -28,15 +18,11 @@ WORKDIR /app
 # Copy the Django project files
 COPY . /app
 
-
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-ENV CORS_ALLOWED_ORIGINS="http://localhost:8000,http://localhost,http://127.0.0.1"
-
 # Expose the port the app runs on
 EXPOSE 8000
-
 
 # Run migrations and start the server
 CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
