@@ -9,7 +9,7 @@ on:
       - master
 
 env:
-  IMAGE_NAME: vitaliio/backend_rds  # имя образа на Docker Hub
+  IMAGE_NAME: vitaliio/backend_rds
 
 jobs:
   build:
@@ -31,11 +31,12 @@ jobs:
     - name: Extract version from Git tag
       id: vars
       run: |
-        TAG_VERSION=$(git describe --tags --abbrev=0)
-        if [ -z "$TAG_VERSION" ]; then
-          TAG_VERSION="latest"
-        fi
-        echo "version=$TAG_VERSION-${{ github.run_number }}" >> $GITHUB_ENV
+        TAG_VERSION=$(git describe --tags --abbrev=0 || echo "latest")
+        echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+
+    - name: Set image version
+      run: |
+        echo "version=${{ env.TAG_VERSION }}-${{ github.run_number }}" >> $GITHUB_ENV
 
     - name: Build and tag Docker image
       run: |
