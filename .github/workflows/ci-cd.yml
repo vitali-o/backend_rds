@@ -34,8 +34,10 @@ jobs:
       id: vars
       run: |
         TAG_VERSION=$(git describe --tags --abbrev=0 || echo "latest")
+        VERSION="${TAG_VERSION}-${GITHUB_RUN_NUMBER}"
         echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
-        echo "VERSION=${TAG_VERSION}-${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "::set-output name=VERSION::$VERSION"  # Устанавливаем VERSION как output для этой job
 
     - name: Build and tag Docker image
       run: |
@@ -51,21 +53,35 @@ jobs:
 
     steps:
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v1
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION }}
 
     - name: Deploy to EC2 using SSM
+      env:
+        DOCKER_IMAGE: ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.VERSION }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_USER: ${{ secrets.DB_USER }}
+        CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
       run: |
         aws ssm send-command \
           --document-name "AWS-RunShellScript" \
           --targets "Key=instanceids,Values=${{ secrets.EC2_INSTANCE_ID }}" \
           --parameters 'commands=[
-            "echo ${{ env.IMAGE_NAME }}:${{ env.VERSION }}",
-            "docker pull ${{ env.IMAGE_NAME }}:${{ env.VERSION }}",
+            "echo $DOCKER_IMAGE",
+            "docker pull $DOCKER_IMAGE",
             "docker stop backend_rds || true",
             "docker rm backend_rds || true",
-            "docker run -d --name backend_rds -e DB_HOST=${{ secrets.DB_HOST }} -e DB_NAME=${{ secrets.DB_NAME }} -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} -e DB_USER=${{ secrets.DB_USER }} -e CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }} -p 0.0.0.0:8000:8000 ${{ env.IMAGE_NAME }}:${{ env.VERSION }}"
+            "docker run -d --name backend_rds \
+              -e DB_HOST=$DB_HOST \
+              -e DB_NAME=$DB_NAME \
+              -e DB_PASSWORD=$DB_PASSWORD \
+              -e DB_USER=$DB_USER \
+              -e CORS_ALLOWED_ORIGINS=$CORS_ALLOWED_ORIGINS \
+              -p 0.0.0.0:8000:8000 \
+              $DOCKER_IMAGE"
           ]'
