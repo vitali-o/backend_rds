@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      VERSION: ${{ steps.vars.outputs.VERSION }}  # Добавляем output для передачи версии
+      VERSION: ${{ steps.vars.outputs.VERSION }}  # Объявляем output для передачи версии
 
     steps:
     - name: Checkout code
@@ -40,7 +40,7 @@ jobs:
         VERSION="${TAG_VERSION}-${GITHUB_RUN_NUMBER}"
         echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
         echo "VERSION=$VERSION" >> $GITHUB_ENV
-        echo "::set-output name=VERSION::$VERSION"  # Устанавливаем output для шага
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT  # Устанавливаем output через файл
 
     - name: Build and tag Docker image
       run: |
@@ -56,7 +56,7 @@ jobs:
 
     steps:
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
