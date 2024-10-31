@@ -63,7 +63,7 @@ jobs:
           --document-name "AWS-RunShellScript" \
           --targets "Key=instanceids,Values=${{ secrets.EC2_INSTANCE_ID }}" \
           --parameters 'commands=[
-            "echo ${{ env.IMAGE_NAME }}:${{ env.VERSION }}"
+            "echo ${{ env.IMAGE_NAME }}:${{ env.VERSION }}",
             "docker pull ${{ env.IMAGE_NAME }}:${{ env.VERSION }}",
             "docker stop backend_rds || true",
             "docker rm backend_rds || true",
