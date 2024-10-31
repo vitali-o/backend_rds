@@ -69,8 +69,8 @@ jobs:
           --document-name "AWS-RunShellScript" \
           --targets "Key=instanceids,Values=${{ secrets.EC2_INSTANCE_ID }}" \
           --parameters 'commands=[
-            "echo $DOCKER_IMAGE",
-            "docker pull $DOCKER_IMAGE",
+            "echo ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.VERSION }}",
+            "docker pull ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.VERSION }}",
             "docker stop backend_rds || true",
             "docker rm backend_rds || true",
             "docker run -d --name backend_rds \
@@ -80,6 +80,6 @@ jobs:
               -e DB_USER=${{ secrets.DB_USER }} \
               -e CORS_ALLOWED_ORIGINS=${{ secrets.CORS_ALLOWED_ORIGINS }} \
               -p 0.0.0.0:8000:8000 \
-              $DOCKER_IMAGE"
+              ${{ env.IMAGE_NAME }}:${{ needs.build.outputs.VERSION }}"
           ]'
 
